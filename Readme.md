@@ -21,4 +21,32 @@ the resource and cause the problem of large-scale concurrent competition in clus
 5. No live locks
 6. No Starvation
 
-## 
+
+
+### Readers
+
+**Lock:**
+- STEP 1: if writers already have the lock, or they want the lock, readers wait(**writing-preferring**)
+- STEP 2: increase the number of current readers
+
+
+**Unlock:**
+- STEP 1: decrement the number of readers
+- STEP 2: if it is the last reading thread, and at the same time, there are at least one waiting writer,
+signal/wake up the front writer in the waiting queue
+
+### Writers
+
+**Lock:**
+- STEP 1: if there are writers waiting or readers reading, wait until the writing signal comes(no waiting 
+writers or reading readers)
+- STEP 2: increase the number of waiting/current writers // TODO : wired definition // writing writers and waiting writers
+
+
+**Unlock:**
+- STEP 1: decrement the number of writers
+- STEP 2: if there are other writers waiting, signal/wake up the fron one in the queue, else there are readers waiting, 
+broadcast the signal
+
+
+
