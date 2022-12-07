@@ -1,20 +1,19 @@
 #include "rw_lock.h";
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // mutex
-pthread_cond_t signal = PTHREAD_COND_INITIALIZER;  // conditional signal
-
-int r = 0, w = 0;
-
 void reader_lock(struct RWLock *lock_p){
 	// set up the mutex protector
 	pthread_mutex_lock(&(lock_p->mutex));
 	
 	// 1. check if there are writers waiting (writing-preferring)
-	while(lock_p->writers>0) 
+	// if there are waiting writers, the reading threads will sleep and wait the reading signal from writers
+	while(lock_p->waiting_writers > 0 || lock_p->writing_threads > 0){
+		lock_p->waiting_readers++;
 		pthread_cond_wait(&(lock_p->signal_read),&(lock_p->mutex));
+		lock_p->waiting_readers--;
+	}
 
-	// 2. increase the number of current readers
-	lock_p->readers++;
+	// 2. increase the number of current reading readers
+	lock_p->reading_threads++;
 
 	// release the mutex protector
 	pthread_mutex_unlock(&(lock_p->mutex));
@@ -26,12 +25,15 @@ void reader_unlock(struct RWLock *lock_p){
 	pthread_mutex_lock(&(lock_p->mutex));
 
 	// 1. decrement the number of current readers
-	lock_p->readers--;
+	lock_p->reading_threads--;
 
 	// 2. check if this is the last readers and there are waiting writers
-	if(lock_p->readers == 0 || lock_p->writers > 0)
+	// if there is no reading threads or there are waiting writers, send signal
+	// to the front writer in the waiting list
+	if(lock_p->reading_threads == 0 || lock_p-> waiting_writers > 0){
 		pthread_cond_signal(&(lock_p->signal_write));
-	
+	}
+
 	// release the mutex protector
 	pthread_mutex_unlock(&(lock_p->mutex));
 }
@@ -42,11 +44,15 @@ void writer_lock(struct RWLock *lock_p){
 	pthread_mutex_lock(&(lock_p->mutex));
 	
 	// 1. check if there are writers waiting or readers reading => unique mutual exclusion
-	while(lock_p->writers > 0 || lock_p->readers > 0)
-		pthread_cond_wait(&signal,&mutex);
+	// the thread go sleep and wait the writing signal
+	while(lock_p->waiting_writers > 0 || lock_p->reading_threads > 0){
+		lock_p->waiting_writers++;
+		pthread_cond_wait(&(lock_p->signal_read),&(lock_p->mutex));
+		lock_p->waiting_writers--;
+	}
 
-	// 2. increment the number of current writers
-	lock_p->writers++;
+	// 2. increment the number of current writing threads // actually it should be 1
+	lock_p->writing_threads++;
 	
 	// release the mutex protector
 	pthread_mutex_unlock(&(lock_p->mutex));
@@ -57,14 +63,14 @@ void writer_unlock(struct RWLock *lock_p){
 	// set up the mutex protector
 	pthread_mutex_lock(&(lock_p->mutex));
 
-	// 1. decrement the number of writers
-	lock_p->writers--;
+	// 1. decrement the number of writing threads // actually, it is 0
+	lock_p->writing_threads--;
 
-	// 2. if there are other writers waiting, signal/wake up the fron one in the queue
-	// else there are readers waiting, broadcast the signal
-	if(lock_p->writers){
+	// 2. if there are other writers waiting, signal/wake up the front one in the waiting queue
+	// else there are readers waiting, broadcast the reading signal to all waiting readers
+	if(lock_p->waiting_writers){
 		pthread_cond_signal(&(lock_p->signal_write));
-	}else if(lock_p->readers){
+	}else if(lock_p->waiting_readers){ // if there is no waiting writers but waiting readers
 		pthread_cond_broadcast(&(lock_p->signal_read));
 	}
 
