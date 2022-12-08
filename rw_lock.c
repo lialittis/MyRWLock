@@ -5,8 +5,8 @@ void reader_lock(struct RWLock *lock_p){
 	// set up the mutex protector
 	pthread_mutex_lock(&(lock_p->mutex));
 	
-	// 1. check if there are writers waiting (writing-preferring)
-	// if there are waiting writers, the reading threads will sleep and wait the reading signal from writers
+	// 1. check if there are writers waiting (writing-preferring) or writer writing
+	// if there are waiting/writing writers, the reading threads will sleep and wait the reading signal from writers
 	while(lock_p->waiting_writers > 0 || lock_p->writing_threads > 0){
 		lock_p->waiting_readers++;
 		printf("[%s] waiting readers [%d]\n",__func__, lock_p->waiting_readers);
@@ -30,8 +30,8 @@ void reader_unlock(struct RWLock *lock_p){
 	// 1. decrement the number of current readers
 	lock_p->reading_threads--;
 
-	// 2. check if this is the last readers and there are waiting writers
-	// if there is no reading threads or there are waiting writers, send signal
+	// 2. check if this is the last readers and there are waiting writers and no writing writers
+	// if there is no reading threads and there are waiting writers and no writing writers, then send signal
 	// to the front writer in the waiting list
 	if(lock_p->reading_threads == 0 && lock_p-> waiting_writers > 0 && lock_p->writing_threads == 0){
 		pthread_cond_signal(&(lock_p->signal_write));

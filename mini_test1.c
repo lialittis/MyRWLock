@@ -35,7 +35,7 @@ int main()
 	init_RWlock(&lock);
 
 	printf("\n#####################################\n");
-	printf("#     Small Test 1 : Only readers   #\n");
+	printf("#      Mini Test 1 : Only readers   #\n");
 	printf("# * Check the concurrency of readers#\n");
 	printf("#   by the same reading time        #\n");
 	printf("# * Check the reading order and     #\n");
