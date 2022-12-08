@@ -24,4 +24,6 @@ void writer_lock(struct RWLock *lock_p);
 
 void writer_unlock(struct RWLock *lock_p);
 
+void init_RWlock(struct RWLock *lock_p);
+
 #endif //__RW_LOCK_H__
