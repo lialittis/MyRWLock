@@ -55,7 +55,7 @@ then broadcast the reading signals again to other waiting readers.
 - STEP 2: if it is the last reading thread, and at the same time, there are at least one waiting writer, and there is no
 writing thread, then signal/wake up one of waiting writers in the waiting queue
 
-**Note** : there is always a mutex to protect the internal counters.
+**Note** : there is always a mutex to protect the conditions.
 
 ### Writers
 
@@ -69,7 +69,7 @@ writers and reading readers)
 - STEP 2: if there are other writers waiting, signal/wake up one writer in the queue, else if there are readers waiting, 
 **broadcast** the reading signal to all readers.
 
-**Note** : there is always a mutex to protect the internal counters.
+**Note** : there is always a mutex to protect the conditions.
 
 ## Correctness
 
