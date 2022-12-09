@@ -267,7 +267,7 @@ Readers in order:
 >>>> num = 10, reading thread id: 140369415747328, @ 1670546449 (time) <<<<
 ```
 
-### Huge Test 4 with readers in order
+### Complet Test with readers in order
 
 10 writing threads and 40 reading threads
 
