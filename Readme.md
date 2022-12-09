@@ -174,6 +174,7 @@ Test 3 and complet test are based on ordered readers.
 ```
 
 ### Test 1
+
 ```
 #######################################
 #               Test 1                #
@@ -190,6 +191,7 @@ Test 3 and complet test are based on ordered readers.
 
 
 ### Test 2
+
 ```
 #######################################
 #               Test 2                #
@@ -242,11 +244,10 @@ Readers not in order :
 # * Check the reading order waking up #
 #   and the arriving order            #
 #######################################
-
+```
 Readers in order:
 
 ```
-...
 >>>> order:5, reading thread id: 140369449318144 <<<<
 [reader_lock_inorder] waiting readers [1]
 >>>> order:6, reading thread id: 140369440925440 <<<<
