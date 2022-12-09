@@ -99,7 +99,7 @@ Ensured by the mechanism of signals.
 
 I use two separate condition variables for writers and readers, this is one of the methods to prevent spurious wakeups and herd effects.
 
-According to the definitions of `pthread_cond_signal()` and `pthread_cond_broadcast`([ref](##Reference)), the first shall unblock 
+According to the definitions of `pthread_cond_signal()` and `pthread_cond_broadcast`([ref](## Reference)), the first shall unblock 
 at least one of the threads that are blocked on the specified condition variable, and the second will unblock all threads waiting 
 for the same signals. 
 
@@ -119,7 +119,7 @@ Please check `test1`, and `test2`.
 
 Discutable.
 
-According to [reference](##Reference), the scheduling policy determines the order in which blocked threads are awakened.
+According to [reference](## Reference), the scheduling policy determines the order in which blocked threads are awakened.
 The default scheduling policy is `SCHED_OTHER`. In our case, the readers and writers have no priorities, so when `pthread_cond_signal` or 
 `pthread_cond_broadcast` call, the order of threads is not determined.
 
