@@ -40,11 +40,11 @@ Test 3 and the complete test are based on ordered readers.
 
 ### Readers
 
-**First Lock:**
+**Lock:**
 - STEP 1: if writers already have the lock, or they want the lock, then readers wait the reading signal(**writing-preferring**)
 - STEP 2: increase the number of current reading readers
 
-**Second Lock In Order:**
+**Lock In Order:**
 - STEP 1: if writers already have the lock, or they want the lock, then readers wait the reading signal(**writing-preferring**)
 - STEPS IN MIDDLE : before continuing, check the local order of reader, it will wait until local order becomes the front of the waiting queue, 
 then broadcast the reading signals again to other waiting readers.
