@@ -48,6 +48,7 @@ int main()
     	for (int i = 0; i < 10; i++) {
         	pthread_create(&(readers[i]), NULL, read_num, NULL);
         	printf(">>>> order:%d, reading thread id: %ld <<<<\n", i, readers[i]);
+		usleep(10000);
     	}
 	
     	for (int i = 0; i < 10; i++) {

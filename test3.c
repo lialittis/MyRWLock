@@ -4,10 +4,10 @@
 #include <unistd.h>
 #include "rw_lock.h"
 
-/* Test 1
+/* Test 3 : Reader Order
  *
  * We create 10 writing threads and 10 reading threads,
- * with order of R 10, then W 10;
+ * with order of R 5, then W 5, then R 5, then W 5;
  * 
  * */
 
@@ -32,7 +32,7 @@ void* add_one(void *arg){
  * read num and print out
  * */
 void* read_num(){
-	reader_lock(&lock);
+	reader_lock_inorder(&lock);
 	sleep(1); // sleep 1 seconds
     	printf(">>>> num = %d, reading thread id: %ld, @ %ld (time) <<<<\n", num, pthread_self(),time(NULL));
 	reader_unlock(&lock);
@@ -46,15 +46,17 @@ int main()
 	init_RWlock(&lock);
 
 	printf("\n#######################################\n");
-	printf("#               Test 1                #\n");
-	printf("# * Given the request of 10 reading   #\n");
-	printf("#   threads first and then 10 writing #\n");
-	printf("#   threads                           #\n");
+	printf("#       Test 3 : Readers Order        #\n");
+	printf("# * Given the request of R 5,W 5,R 5, #\n");
+	printf("#   W 5.                              #\n");
+	printf("# * Check the writing preferring      #\n");
 	printf("# * Check the order of writing threads#\n");
 	printf("#   in the waiting list and the order #\n");
 	printf("#   of signaled/executed              #\n");
 	printf("# * Check unique lock of writers      #\n");
 	printf("# * Check concurrent readers          #\n");
+	printf("# * Check the reading order waking up #\n");
+	printf("#   and the arriving order            #\n");
 	printf("#######################################\n\n");
 	
 
@@ -62,14 +64,27 @@ int main()
     	pthread_t writers[10] = {0};
     	pthread_t readers[10] = {0};
 	
-    	for (int i = 0; i < 10; i++) {
+    	for (int i = 0; i < 5; i++) {
         	pthread_create(&(readers[i]), NULL, read_num, NULL);
+        	printf(">>>> order:%d, reading thread id: %ld <<<<\n", i, readers[i]);
 		usleep(10000);
     	}
     	
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 5; i++) {
         	pthread_create(&(writers[i]), NULL, add_one, NULL);
-        	printf(">>>> order:%d, writing thread id: %ld <<<<\n", i, writers[i]);
+		usleep(10000);
+        	//printf(">>>> order:%d, writing thread id: %ld <<<<\n", i, writers[i]);
+    	}
+    	
+	for (int i = 5; i < 10; i++) {
+        	pthread_create(&(readers[i]), NULL, read_num, NULL);
+        	printf(">>>> order:%d, reading thread id: %ld <<<<\n", i, readers[i]);
+		usleep(10000);
+    	}
+    	
+	for (int i = 5; i < 10; i++) {
+        	pthread_create(&(writers[i]), NULL, add_one, NULL);
+        	//printf(">>>> order:%d, writing thread id: %ld <<<<\n", i, writers[i]);
 		usleep(10000);
     	}
 	

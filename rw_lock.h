@@ -18,6 +18,8 @@ struct RWLock{
 
 void reader_lock(struct RWLock *lock_p);
 
+void reader_lock_inorder(struct RWLock *lock_p);
+
 void reader_unlock(struct RWLock *lock_p);
 
 void writer_lock(struct RWLock *lock_p);
