@@ -17,38 +17,36 @@ There are explicit mutual extension relationships between the writer and reader,
 3. Tackling the herd effect => Avoiding waking up many waiting threads at the same time when there is no enough
 resources, because they all try to access limited resources and it cause the problem of large-scale concurrent 
 competition in clusters => Avoiding unnecessary context switches.
-4. No dead locks => No circle relationships
+4. No dead locks => No circle waitings
 5. No live locks => Signal mechanism + condition
 6. No Starvation(for writers) => Writers have higher priority than readers 
 
 7. **Special design:** all readers should be serviced in their order of arrival => the waking order of readers should
-be exact the same with the blocked order.
+be exactly the same as the blocked order.
 
 **I choose to use a mutex and two signals(conditional variables) to implement this reader/writer lock.**
-The mutex is used to protect conditions of signals for this lock, it coorperates with signals. At the end, 
-
-I encapulate the lock into a specific struct by C programming, where I offer four internal counters to construct well the conditions:
-the number of reading threads, the number of writing threads(0 or 1), the number of waiting readers and the number of waiting writers.
+The mutex is used to protect the conditions of signals for this lock, it cooperates with signals. In the end, 
+I encapsulated the lock into a specific struct by C programming, where I offer four internal counters to construct well the conditions:
+the number of reading threads, the number of writing threads(0 or 1), the number of waiting readers, and the number of waiting writers.
 
 ## Implemenation
 
 **IMPORTANT:**
-I create two lockers for readers. The first doesn't follow the rule 7, the second satisfies the rule 7 but has lower performance.
+I create two ways of acquiring locks for readers. The first doesn't follow rule 7, and the second satisfies rule 7 but has lower performance.
 Please check the code in `rw_lock.c` and `rw_lock.h`.
 
-Mini tests and test 1,2 are based on unordered readers.
-Test 3 and complet test are based on ordered readers.
+Mini tests and tests 1,2 are based on unordered readers.
+Test 3 and the complete test are based on ordered readers.
 
 ### Readers
 
-
-**Lock:**
+**First Lock:**
 - STEP 1: if writers already have the lock, or they want the lock, then readers wait the reading signal(**writing-preferring**)
 - STEP 2: increase the number of current reading readers
 
-**Lock In Order:**
+**Second Lock In Order:**
 - STEP 1: if writers already have the lock, or they want the lock, then readers wait the reading signal(**writing-preferring**)
-- STEPS IN MIDDLE : before continuing, check the current order of reader, it will wait until local order becomes the front of the waiting queue, 
+- STEPS IN MIDDLE : before continuing, check the local order of reader, it will wait until local order becomes the front of the waiting queue, 
 then broadcast the reading signals again to other waiting readers.
 - STEP 2: increase the number of current reading readers
 
@@ -77,7 +75,7 @@ writers and reading readers)
 
 ### Shared mode of readers
 
-Proved. Because readers only are blocked by writers, there is no mutual exclusion relationships between readers.
+Proved. Because readers only are blocked by writers, there are no mutual exclusion relationships between readers.
 
 Please check `mini_test1`.
 
@@ -90,7 +88,7 @@ Please check `mini_test2`.
 
 ### Writing-preferring/No starvation for writers
 
-Proved. The readers are easily blocked by a writing thread or a waiting writer, and get signals(in the way of broadcasting)
+Proved. The readers are easily blocked by a writing thread or a waiting writer and get signals(in the way of broadcasting)
 once all waiting and writing writers disappear/close.
 
 Please check `mini_test3`.
@@ -99,23 +97,23 @@ Please check `mini_test3`.
 
 Ensured by the mechanism of signals.
 
-I use two separate condition variables for writers and readers, this is one of the method to prevent spurious wakeups and herd effect.
+I use two separate condition variables for writers and readers, this is one of the methods to prevent spurious wakeups and herd effects.
 
 According to the definitions of `pthread_cond_signal()` and `pthread_cond_broadcast`([ref](##Reference)), the first shall unblock 
 at least one of the threads that are blocked on the specified condition variable, and the second will unblock all threads waiting 
 for the same signals. 
 
-For writers, using `broadcast` would cause **herd effect** as only one writer is allowed to access the resource
-at the end. Using `pthread_cond_signal()` and `while` condition checking for waiting threads ensure activating only one thread waiting 
+For writers, using `broadcast` would cause a **herd effect** as only one writer is allowed to access the resource
+at the end. Using `pthread_cond_signal()` and `while` condition checking for waiting threads ensures activating only one thread waiting 
 for the condition. When there are multiple waiting writers, it activates/wakes up only one writer.
 
-For reading signals, even though using `pthread_cond_broadcast()` would wake up all waiting threads for readers, but personally I
-don't count this as the herd effect. Since all readers should be allowed to access the resources in shared mode, so there is no unnecessary
-context switches. But `while` condition for all waiting threads is still needed.
+For reading signals, even though using `pthread_cond_broadcast()` would wake up all waiting threads for readers, personally, I
+don't count this as the herd effect. Since all readers should be allowed to access the resources in shared mode, so there are no unnecessary
+context switches. But the `while` condition for all waiting threads is still needed.
 
 There could also be spurious lock conflicts (on a multiprocessor). The solution is to drop the mutex before signaling.
 
-Please check `test1`,`test2`.
+Please check `test1`, and `test2`.
 
 ### Order of readers
 
@@ -125,8 +123,8 @@ According to [reference](##Reference), the scheduling policy determines the orde
 The default scheduling policy is `SCHED_OTHER`. In our case, the readers and writers have no priorities, so when `pthread_cond_signal` or 
 `pthread_cond_broadcast` call, the order of threads is not determined.
 
-**IF WE DON'T MODIFY THE SCUEDULING POLICY**, we have to add a complicated mechanism to wake the readers up in order of arrival/blocking.
-In this case, I choose to use another round of waiting and broadcast inside of all readers to ensure the order of current reader is the 
+**IF WE DON'T MODIFY THE SCHEDULING POLICY**, we have to add a complicated mechanism to wake the readers up in order of arrival/blocking.
+In this case, I choose to use another round of waiting and broadcast inside of all readers to ensure the order of current readers is the 
 front one of the waiting queue.
 This method has lower performance but it makes sure of the order of readers is as expected.
 
@@ -134,9 +132,9 @@ Please check `test3`.
 
 ### No Live Lock
 
-Proved. If the readers signal one of waiting writers, the writer would start to write. When it finishes, it would first signal other 
+Proved. If the readers signal one of the waiting writers, the writer would start to write. When it finishes, it would first signal other 
 waiting writers then all readers. Once the readers get the signals, it means currently the writers finished their jobs, and readers
-start to work until being interupted or all done. Ther is no live lock.
+start to work until being interrupted or all done. Ther is no live lock.
 
 Please check `complet_test`.
 
